@@ -1,0 +1,18 @@
+model Assignment {
+  id                  String    @id @default(uuid())
+  title               String
+  requirement_doc_url String
+  assignment_repo_url String?
+  assignment_number   Int
+  released_at         DateTime?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  batch_id    String
+  batch       Batch        @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@unique([batch_id, assignment_number])
+  @@index([batch_id, released_at])
+  @@map("assignments")
+}

@@ -1,0 +1,12 @@
+model Batch {
+  id         String   @id @default(uuid())
+  name       String
+  code       String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  students    User[]
+  assignments Assignment[]
+
+  @@map("batches")
+}

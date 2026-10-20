@@ -1,0 +1,17 @@
+model User {
+  id          String     @id @default(uuid())
+  name        String
+  email       String     @unique
+  password    String
+  role        Role       @default(STUDENT)
+  user_status UserStatus @default(ACTIVE)
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+
+  batch_id            String?
+  batch               Batch?       @relation(fields: [batch_id], references: [id], onDelete: SetNull)
+  submissions         Submission[] @relation("StudentSubmissions")
+  reviewedSubmissions Submission[] @relation("ReviewedSubmissions")
+
+  @@map("users")
+}
