@@ -10,6 +10,12 @@ enum SubmissionStatus {
   REJECTED
 }
 
+enum AssignmentStatus {
+  PENDING
+  RELEASED
+  ENDED
+}
+
 enum UserStatus {
   ACTIVE
   BAN

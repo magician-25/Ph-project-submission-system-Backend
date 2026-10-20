@@ -1,46 +1,41 @@
 import { Router } from "express";
-import { authenticate, requireRoles } from "../../middleware/auth";
-import { submissionRateLimit } from "../../middleware/rate-limit";
+import { auth } from "../../middleware/auth";
+import validateSchema from "../../utils/validateSchema";
+import { SubmissionController } from "./submission.controller";
 import {
-	createSubmissionController,
-	getMySubmissionController,
-	listSubmissionsController,
-	reviewSubmissionController,
-	submissionStatsController,
-} from "./submission.controller";
+	createSubmissionSchema,
+	reviewSubmissionSchema,
+	submissionIdParamsSchema,
+} from "./submission.schemas";
 
-const submissionRouter = Router();
+const router = Router();
 
-submissionRouter.post(
+router.post(
 	"/",
-	authenticate,
-	requireRoles("STUDENT"),
-	submissionRateLimit,
-	createSubmissionController,
+	auth("STUDENT"),
+	validateSchema(createSubmissionSchema),
+	SubmissionController.createSubmission,
 );
-submissionRouter.get(
-	"/mine",
-	authenticate,
-	requireRoles("STUDENT"),
-	getMySubmissionController,
-);
-submissionRouter.get(
+router.get("/mine", auth("STUDENT"), SubmissionController.getMySubmissions);
+
+router.get(
 	"/",
-	authenticate,
-	requireRoles("MENTOR", "ADMIN"),
-	listSubmissionsController,
+	auth("MENTOR", "ADMIN"),
+	SubmissionController.getSubmissionsForReview,
 );
-submissionRouter.get(
+
+router.get(
 	"/stats",
-	authenticate,
-	requireRoles("MENTOR", "ADMIN"),
-	submissionStatsController,
-);
-submissionRouter.patch(
-	"/:id/review",
-	authenticate,
-	requireRoles("MENTOR", "ADMIN"),
-	reviewSubmissionController,
+	auth("MENTOR", "ADMIN"),
+	SubmissionController.getSubmissionStatistics,
 );
 
-export default submissionRouter;
+router.patch(
+	"/:id/review",
+	auth("MENTOR", "ADMIN"),
+	validateSchema(submissionIdParamsSchema, "params"),
+	validateSchema(reviewSubmissionSchema),
+	SubmissionController.reviewSubmission,
+);
+
+export const SubmissionRoutes = router;

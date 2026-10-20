@@ -1,30 +1,52 @@
-import type { RequestUser } from "../../types";
-import { AppError } from "../../utils/app-error";
+import status from "http-status";
+import type { IQuery, RequestUser } from "../../types";
 import { asyncHandler } from "../../utils/async-handler";
 import sendResponse from "../../utils/sendResponse";
+import type {
+	AssignmentIdParams,
+	BatchIdParams,
+	UpdateAssignmentStatusPayload,
+} from "./assignment.schemas";
 import { AssignmentService } from "./assignment.service";
 
-const createAssignment = asyncHandler(async (req, res) => {
+const handleCreateAssignment = asyncHandler(async (req, res) => {
 	const assignment = await AssignmentService.createAssignment(req.body);
 	sendResponse(res, {
+		status: status.CREATED,
 		message: "Assignment created",
 		data: assignment,
 	});
 });
 
-const releaseAssignment = asyncHandler(async (req, res) => {
-	const assignmentId = req.params.id;
-	if (typeof assignmentId !== "string" || !assignmentId) {
-		throw new AppError(400, "A valid assignment id is required");
-	}
-	const assignment = await AssignmentService.releaseAssignment(assignmentId);
+const handleUpdateAssignmentStatus = asyncHandler(async (req, res) => {
+	const { assignmentId } = res.locals.validatedParams as AssignmentIdParams;
+	const assignment = await AssignmentService.updateAssignmentStatus(
+		assignmentId,
+		req.body as UpdateAssignmentStatusPayload,
+	);
 	sendResponse(res, {
-		message: "Assignment released",
+		message: "Assignment status updated",
 		data: assignment,
 	});
 });
 
-const getReleasedAssignments = asyncHandler(async (req, res) => {
+const handleGetAssignmentsForBatch = asyncHandler(async (req, res) => {
+	const { batchId } = res.locals.validatedParams as BatchIdParams;
+	const query = req.query as IQuery;
+	const result = await AssignmentService.getAssignmentsForBatch(batchId, query);
+	sendResponse(res, {
+		message: "Batch assignments retrieved",
+		data: result.assignments,
+		meta: {
+			page: result.pagination.page,
+			limit: result.pagination.limit,
+			totalPages: result.pagination.totalPages,
+			dataCount: result.pagination.total,
+		},
+	});
+});
+
+const handleGetReleasedAssignments = asyncHandler(async (req, res) => {
 	const user = req.user as RequestUser;
 	const assignments = await AssignmentService.getReleasedAssignments(
 		user.batch_id,
@@ -36,7 +58,8 @@ const getReleasedAssignments = asyncHandler(async (req, res) => {
 });
 
 export const AssignmentController = {
-	getReleasedAssignments,
-	releaseAssignment,
-	createAssignment
+	getReleasedAssignments: handleGetReleasedAssignments,
+	updateAssignmentStatus: handleUpdateAssignmentStatus,
+	createAssignment: handleCreateAssignment,
+	getAssignmentsForBatch: handleGetAssignmentsForBatch,
 };

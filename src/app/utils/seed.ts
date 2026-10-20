@@ -1,8 +1,9 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
+import config from "../config";
 import { prisma } from "../lib/prisma";
 
-const seedAdmin = async () => {
+export const seedAdmin = async () => {
 	const name = process.env.SEED_ADMIN_NAME;
 	const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
 	const password = process.env.SEED_ADMIN_PASSWORD;
@@ -12,23 +13,18 @@ const seedAdmin = async () => {
 		);
 	}
 
-	const passwordHash = await bcrypt.hash(password, 12);
-	await prisma.user.upsert({
-		where: { email },
-		create: { name, email, password: passwordHash, role: "ADMIN" },
-		update: { role: "ADMIN" },
+	const existingAdmin = await prisma.user.findFirst({
+		where: { role: "ADMIN" },
 		select: { id: true },
 	});
-};
+	if (existingAdmin) {
+		console.log("Admin already exists");
+		return;
+	}
 
-seedAdmin()
-	.then(() => {
-		console.log("Admin account is ready.");
-	})
-	.catch((error: unknown) => {
-		console.error("Admin seed failed:", error);
-		process.exitCode = 1;
-	})
-	.finally(async () => {
-		await prisma.$disconnect();
+	const passwordHash = await bcrypt.hash(password, config.bcrypt_salt_rounds);
+	await prisma.user.create({
+		data: { email, name, password: passwordHash, role: "ADMIN" },
 	});
+	console.log("Admin created");
+};

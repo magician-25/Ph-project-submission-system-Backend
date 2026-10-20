@@ -1,19 +1,23 @@
-import type { RequestHandler } from "express";
+import status from "http-status";
 import { asyncHandler } from "../../utils/async-handler";
-import { createBatchSchema } from "./batch.schemas";
-import { createBatch, listBatches } from "./batch.service";
+import sendResponse from "../../utils/sendResponse";
+import { BatchService } from "./batch.service";
 
-export const createBatchController: RequestHandler = asyncHandler(
-	async (request, response) => {
-		const input = createBatchSchema.parse(request.body);
-		const batch = await createBatch(input);
-		response.status(201).json({ success: true, data: batch });
-	},
-);
+const handleCreateBatch = asyncHandler(async (req, res) => {
+	const batch = await BatchService.createBatch(req.body);
+	sendResponse(res, {
+		status: status.CREATED,
+		message: "Batch created",
+		data: batch,
+	});
+});
 
-export const listBatchesController: RequestHandler = asyncHandler(
-	async (_request, response) => {
-		const batches = await listBatches();
-		response.status(200).json({ success: true, data: batches });
-	},
-);
+const handleListBatches = asyncHandler(async (_req, res) => {
+	const batches = await BatchService.getAllBatches();
+	sendResponse(res, { message: "Batches retrieved", data: batches });
+});
+
+export const BatchController = {
+	createBatch: handleCreateBatch,
+	getAllBatches: handleListBatches,
+};

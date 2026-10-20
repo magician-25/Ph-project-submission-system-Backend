@@ -2,11 +2,23 @@ import { Router } from "express";
 import { auth } from "../../middleware/auth";
 import validateSchema from "../../utils/validateSchema";
 import { AssignmentController } from "./assignment.controller";
-import { createAssignmentSchema } from "./assignment.schemas";
+import {
+	assignmentIdParamsSchema,
+	batchIdParamsSchema,
+	createAssignmentSchema,
+	updateAssignmentStatusSchema,
+} from "./assignment.schemas";
 
 const router = Router();
 
 router.get("/", auth("STUDENT"), AssignmentController.getReleasedAssignments);
+
+router.get(
+	"/admin/batches/:batchId",
+	auth("ADMIN"),
+	validateSchema(batchIdParamsSchema, "params"),
+	AssignmentController.getAssignmentsForBatch,
+);
 
 router.post(
 	"/",
@@ -16,9 +28,11 @@ router.post(
 );
 
 router.patch(
-	"/:id/release",
+	"/:assignmentId/status",
 	auth("ADMIN"),
-	AssignmentController.releaseAssignment,
+	validateSchema(assignmentIdParamsSchema, "params"),
+	validateSchema(updateAssignmentStatusSchema),
+	AssignmentController.updateAssignmentStatus,
 );
 
 export const AssignmentRoutes = router;

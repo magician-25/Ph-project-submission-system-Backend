@@ -1,10 +1,18 @@
 import { Router } from "express";
-import { authRateLimit } from "../../middleware/rate-limit";
-import { loginController, signupController } from "./auth.controller";
+import { auth } from "../../middleware/auth";
+import validateSchema from "../../utils/validateSchema";
+import { AuthController } from "./auth.controller";
+import { loginSchema, signupSchema } from "./auth.schemas";
 
-const authRouter = Router();
+const router = Router();
 
-authRouter.post("/signup", authRateLimit, signupController);
-authRouter.post("/login", authRateLimit, loginController);
+router.post(
+    "/signup",
+    validateSchema(signupSchema),
+    AuthController.createStudentAccount,
+);
+router.post("/login", validateSchema(loginSchema), AuthController.login);
 
-export default authRouter;
+router.post("/logout", auth(), AuthController.logout);
+
+export const AuthRoutes = router;

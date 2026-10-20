@@ -1,31 +1,28 @@
 import { z } from "zod";
 
 const passwordSchema = z
-	.string()
+	.string({ error: "Password must be text" })
 	.min(8, "Password must be at least 8 characters")
 	.max(72, "Password cannot exceed 72 characters");
 
 export const signupSchema = z.object({
-	name: z.string().trim().min(1).max(100),
-	batchId: z.string().uuid(),
-	email: z
-		.string()
+	name: z
+		.string({ error: "Name must be text" })
 		.trim()
-		.email()
-		.max(254)
-		.transform((email) => email.toLowerCase()),
+		.min(1, "Name is required")
+		.max(100, "Name cannot exceed 100 characters"),
+	batchId: z.uuid("Batch ID must be a valid UUID"),
+	email: z.email("Enter a valid email address"),
 	password: passwordSchema,
 });
 
 export const loginSchema = z.object({
-	email: z
-		.string()
-		.trim()
-		.email()
-		.max(254)
-		.transform((email) => email.toLowerCase()),
-	password: z.string().min(1).max(72),
+	email: z.email("Enter a valid email address"),
+	password: z
+		.string({ error: "Password must be text" })
+		.min(1, "Password is required")
+		.max(72, "Password cannot exceed 72 characters"),
 });
 
-export type SignupInput = z.infer<typeof signupSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;
+export type SignupPayload = z.infer<typeof signupSchema>;
+export type LoginPayload = z.infer<typeof loginSchema>;

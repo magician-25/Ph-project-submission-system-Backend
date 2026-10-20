@@ -1,65 +1,68 @@
-import type { RequestHandler } from "express";
-import { getAuthenticatedUser } from "../../middleware/auth";
-import { AppError } from "../../utils/app-error";
+import status from "http-status";
+import type { RequestUser } from "../../types";
 import { asyncHandler } from "../../utils/async-handler";
-import {
-	createSubmissionSchema,
-	listSubmissionsQuerySchema,
-	reviewSubmissionSchema,
-} from "./submission.schemas";
-import {
-	createSubmission,
-	getMySubmission,
-	getSubmissionStats,
-	listSubmissions,
-	reviewSubmission,
-} from "./submission.service";
+import sendResponse from "../../utils/sendResponse";
+import { SubmissionService } from "./submission.service";
 
-export const createSubmissionController: RequestHandler = asyncHandler(
-	async (request, response) => {
-		const user = getAuthenticatedUser(request);
-		const input = createSubmissionSchema.parse(request.body);
-		const submission = await createSubmission(user.id, user.batch_id, input);
-		response.status(201).json({ success: true, data: submission });
-	},
-);
+const handleCreateSubmission = asyncHandler(async (req, res) => {
+	const student = req.user as RequestUser;
+	const submission = await SubmissionService.createSubmission(
+		student.id,
+		student.batch_id,
+		req.body,
+	);
+	sendResponse(res, {
+		status: status.CREATED,
+		message: "Submission created",
+		data: submission,
+	});
+});
 
-export const getMySubmissionController: RequestHandler = asyncHandler(
-	async (request, response) => {
-		const user = getAuthenticatedUser(request);
-		const submission = await getMySubmission(user.id);
-		response.status(200).json({ success: true, data: submission });
-	},
-);
+const handleGetMySubmissions = asyncHandler(async (req, res) => {
+	const student = req.user as RequestUser;
+	const submissions = await SubmissionService.getStudentSubmissions(student.id);
+	sendResponse(res, {
+		message: "Your submissions retrieved",
+		data: submissions,
+	});
+});
 
-export const listSubmissionsController: RequestHandler = asyncHandler(
-	async (request, response) => {
-		const query = listSubmissionsQuerySchema.parse(request.query);
-		const result = await listSubmissions({
-			page: query.page,
-			limit: query.limit,
-			...(query.status ? { status: query.status } : {}),
-		});
-		response.status(200).json({ success: true, data: result });
-	},
-);
+const handleGetSubmissionsForReview = asyncHandler(async (req, res) => {
+	const query = req.query;
+	const { meta, submissions } = await SubmissionService.getSubmissionsForReview(query);
+	sendResponse(res, {
+		message: "Submissions retrieved",
+		data: submissions,
+		meta,
+	});
+});
 
-export const submissionStatsController: RequestHandler = asyncHandler(
-	async (_request, response) => {
-		const stats = await getSubmissionStats();
-		response.status(200).json({ success: true, data: stats });
-	},
-);
+const handleGetSubmissionStatistics = asyncHandler(async (_req, res) => {
+	const statistics = await SubmissionService.getSubmissionStatistics();
+	sendResponse(res, {
+		message: "Submission statistics retrieved",
+		data: statistics,
+	});
+});
 
-export const reviewSubmissionController: RequestHandler = asyncHandler(
-	async (request, response) => {
-		const user = getAuthenticatedUser(request);
-		const submissionId = request.params.id;
-		if (typeof submissionId !== "string" || submissionId.length === 0) {
-			throw new AppError(400, "A valid submission id is required");
-		}
-		const input = reviewSubmissionSchema.parse(request.body);
-		const submission = await reviewSubmission(submissionId, user.id, input);
-		response.status(200).json({ success: true, data: submission });
-	},
-);
+const handleReviewSubmission = asyncHandler(async (req, res) => {
+	const reviewer = req.user as RequestUser;
+	const { id: submissionId } = res.locals.validatedParams;
+	const submission = await SubmissionService.reviewSubmission(
+		submissionId,
+		reviewer.id,
+		req.body,
+	);
+	sendResponse(res, {
+		message: "Submission reviewed",
+		data: submission,
+	});
+});
+
+export const SubmissionController = {
+	createSubmission: handleCreateSubmission,
+	getMySubmissions: handleGetMySubmissions,
+	getSubmissionsForReview: handleGetSubmissionsForReview,
+	getSubmissionStatistics: handleGetSubmissionStatistics,
+	reviewSubmission: handleReviewSubmission,
+};

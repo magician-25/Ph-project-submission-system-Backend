@@ -1,8 +1,8 @@
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
-import type { CreateBatchInput } from "./batch.schemas";
+import type { CreateBatchPayload } from "./batch.schemas";
 
-export const createBatch = async (input: CreateBatchInput) => {
+const createBatch = async (input: CreateBatchPayload) => {
 	const existingBatch = await prisma.batch.findUnique({
 		where: { code: input.code },
 		select: { id: true },
@@ -14,8 +14,13 @@ export const createBatch = async (input: CreateBatchInput) => {
 	return prisma.batch.create({ data: input });
 };
 
-export const listBatches = () =>
+const getAllBatches = () =>
 	prisma.batch.findMany({
 		select: { id: true, name: true, code: true },
 		orderBy: { name: "asc" },
 	});
+
+export const BatchService = {
+	createBatch,
+	getAllBatches,
+};

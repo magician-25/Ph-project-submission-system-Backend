@@ -1,18 +1,17 @@
 import { Router } from "express";
-import { authenticate, requireRoles } from "../../middleware/auth";
-import {
-	createBatchController,
-	listBatchesController,
-} from "./batch.controller";
+import { auth } from "../../middleware/auth";
+import validateSchema from "../../utils/validateSchema";
+import { BatchController } from "./batch.controller";
+import { createBatchSchema } from "./batch.schemas";
 
-const batchRouter = Router();
+const router = Router();
 
-batchRouter.get("/", listBatchesController);
-batchRouter.post(
+router.get("/", BatchController.getAllBatches);
+router.post(
 	"/",
-	authenticate,
-	requireRoles("ADMIN"),
-	createBatchController,
+	auth("ADMIN"),
+	validateSchema(createBatchSchema),
+	BatchController.createBatch,
 );
 
-export default batchRouter;
+export const BatchRoutes = router;
