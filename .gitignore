@@ -3,3 +3,4 @@ dist/
 .env
 /generated
 /ph-instructor-assignment.postman_collection.json
+.vercel
