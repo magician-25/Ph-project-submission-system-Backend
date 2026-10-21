@@ -1,18 +1,10 @@
-import type { Response } from "express";
 import status from "http-status";
-import config from "../../config";
+import type { IQuery, RequestUser } from "../../types";
 import { asyncHandler } from "../../utils/async-handler";
 import sendResponse from "../../utils/sendResponse";
+import { setAccessTokenCookie } from "../../utils/setAccessToken";
+import type { UserIdParams } from "./auth.schemas";
 import { AuthService } from "./auth.service";
-
-const setAccessTokenCookie = (response: Response, token: string) => {
-	response.cookie("access_token", token, {
-		httpOnly: true,
-		secure: config.environment !== "development",
-		sameSite: config.environment === "development" ? "lax" : "none",
-		maxAge: 24 * 60 * 60 * 1000,
-	});
-};
 
 const createStudentAccount = asyncHandler(async (req, res) => {
 	const result = await AuthService.createStudentAccount(req.body);
@@ -41,8 +33,41 @@ const logout = asyncHandler(async (_req, res) => {
 	});
 });
 
+const getMe = asyncHandler(async (req, res) => {
+	const user = req.user as RequestUser;
+
+	const result = await AuthService.getMe(user);
+
+	sendResponse(res, {
+		message: "Profile retrieved",
+		data: result,
+	});
+});
+
+const getUsers = asyncHandler(async (req, res) => {
+	const query = req.query as IQuery;
+	const result = await AuthService.getUsers(query);
+	sendResponse(res, {
+		message: "Users retrieved",
+		data: result.users,
+		meta: result.meta,
+	});
+});
+
+const promoteStudentToMentor = asyncHandler(async (_req, res) => {
+	const params = res.locals.validatedParams as UserIdParams;
+	const user = await AuthService.promoteStudentToMentor(params);
+	sendResponse(res, {
+		message: "User promoted to mentor",
+		data: user,
+	});
+});
+
 export const AuthController = {
 	createStudentAccount,
 	login,
-	logout
+	logout,
+	getMe,
+	getUsers,
+	promoteStudentToMentor,
 };

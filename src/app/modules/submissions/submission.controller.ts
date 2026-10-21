@@ -1,5 +1,5 @@
 import status from "http-status";
-import type { RequestUser } from "../../types";
+import type { IQuery, RequestUser } from "../../types";
 import { asyncHandler } from "../../utils/async-handler";
 import sendResponse from "../../utils/sendResponse";
 import { SubmissionService } from "./submission.service";
@@ -29,7 +29,8 @@ const handleGetMySubmissions = asyncHandler(async (req, res) => {
 
 const handleGetSubmissionsForReview = asyncHandler(async (req, res) => {
 	const query = req.query;
-	const { meta, submissions } = await SubmissionService.getSubmissionsForReview(query);
+	const { meta, submissions } =
+		await SubmissionService.getSubmissionsForReview(query);
 	sendResponse(res, {
 		message: "Submissions retrieved",
 		data: submissions,
@@ -37,8 +38,10 @@ const handleGetSubmissionsForReview = asyncHandler(async (req, res) => {
 	});
 });
 
-const handleGetSubmissionStatistics = asyncHandler(async (_req, res) => {
-	const statistics = await SubmissionService.getSubmissionStatistics();
+const handleGetSubmissionStatistics = asyncHandler(async (req, res) => {
+	const query = req.query as IQuery;
+	const batchId = typeof query.batchId === "string" ? query.batchId : undefined;
+	const statistics = await SubmissionService.getSubmissionStatistics(batchId);
 	sendResponse(res, {
 		message: "Submission statistics retrieved",
 		data: statistics,

@@ -11,11 +11,22 @@ import {
 
 const router = Router();
 
-router.get("/", auth("STUDENT"), AssignmentController.getReleasedAssignments);
+router.get(
+	"/",
+	auth("STUDENT", "MENTOR"),
+	AssignmentController.getStudentAssignments,
+);
 
 router.get(
 	"/admin/batches/:batchId",
 	auth("ADMIN"),
+	validateSchema(batchIdParamsSchema, "params"),
+	AssignmentController.getAssignmentsForBatch,
+);
+
+router.get(
+	"/batches/:batchId",
+	auth("MENTOR"),
 	validateSchema(batchIdParamsSchema, "params"),
 	AssignmentController.getAssignmentsForBatch,
 );

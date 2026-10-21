@@ -46,19 +46,20 @@ const handleGetAssignmentsForBatch = asyncHandler(async (req, res) => {
 	});
 });
 
-const handleGetReleasedAssignments = asyncHandler(async (req, res) => {
+const handleGetStudentAssignments = asyncHandler(async (req, res) => {
 	const user = req.user as RequestUser;
-	const assignments = await AssignmentService.getReleasedAssignments(
+	const assignments = await AssignmentService.getStudentAssignments(
 		user.batch_id,
+		user.id,
 	);
 	sendResponse(res, {
-		message: "Released assignments retrieved",
+		message: "Assignments retrieved",
 		data: assignments,
 	});
 });
 
 export const AssignmentController = {
-	getReleasedAssignments: handleGetReleasedAssignments,
+	getStudentAssignments: handleGetStudentAssignments,
 	updateAssignmentStatus: handleUpdateAssignmentStatus,
 	createAssignment: handleCreateAssignment,
 	getAssignmentsForBatch: handleGetAssignmentsForBatch,

@@ -54,9 +54,7 @@ const getSubmissionsForReview = async (query: IQuery) => {
 		Math.max(1, Number.parseInt(query.limit ?? "", 10) || 10),
 	);
 
-	const where = query.status
-		? { status: query.status }
-		: {};
+	const where = query.status ? { status: query.status } : {};
 	const [total, submissions] = await prisma.$transaction([
 		prisma.submission.count({ where }),
 		prisma.submission.findMany({
@@ -79,10 +77,10 @@ const getSubmissionsForReview = async (query: IQuery) => {
 						batch: {
 							select: {
 								name: true,
-								code: true
-							}
-						}
-					}
+								code: true,
+							},
+						},
+					},
 				},
 			},
 			orderBy: { created_at: "desc" },
@@ -102,12 +100,23 @@ const getSubmissionsForReview = async (query: IQuery) => {
 	};
 };
 
-const getSubmissionStatistics = async () => {
+const getSubmissionStatistics = async (batchId?: string) => {
+	if (batchId) {
+		const batch = await prisma.batch.findUnique({
+			where: { id: batchId },
+			select: { id: true },
+		});
+		if (!batch) {
+			throw new AppError(404, "Batch not found");
+		}
+	}
+
+	const where = batchId ? { assignment: { is: { batch_id: batchId } } } : {};
 	const [total, pending, approved, rejected] = await Promise.all([
-		prisma.submission.count(),
-		prisma.submission.count({ where: { status: "PENDING" } }),
-		prisma.submission.count({ where: { status: "APPROVED" } }),
-		prisma.submission.count({ where: { status: "REJECTED" } }),
+		prisma.submission.count({ where }),
+		prisma.submission.count({ where: { ...where, status: "PENDING" } }),
+		prisma.submission.count({ where: { ...where, status: "APPROVED" } }),
+		prisma.submission.count({ where: { ...where, status: "REJECTED" } }),
 	]);
 	return { total, pending, approved, rejected };
 };
@@ -127,11 +136,19 @@ const reviewSubmission = async (
 	if (submission.status !== "PENDING") {
 		throw new AppError(409, "Only pending submissions can be reviewed");
 	}
+	let mark: number | null = null;
+	if (input.status === "APPROVED") {
+		if (input.mark === undefined) {
+			throw new AppError(400, "A mark is required when approving a submission");
+		}
+		mark = input.mark;
+	}
 
 	const updated = await prisma.submission.update({
 		where: { id: submissionId, status: "PENDING" },
 		data: {
 			status: input.status,
+			mark,
 			...(input.reviewNote !== undefined
 				? { review_note: input.reviewNote }
 				: {}),
@@ -140,7 +157,7 @@ const reviewSubmission = async (
 		},
 	});
 
-	return updated
+	return updated;
 };
 
 export const SubmissionService = {

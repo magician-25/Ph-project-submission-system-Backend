@@ -24,5 +24,10 @@ export const loginSchema = z.object({
 		.max(72, "Password cannot exceed 72 characters"),
 });
 
+export const userIdParamsSchema = z.object({
+	userId: z.uuid("User ID must be a valid UUID"),
+});
+
 export type SignupPayload = z.infer<typeof signupSchema>;
 export type LoginPayload = z.infer<typeof loginSchema>;
+export type UserIdParams = z.infer<typeof userIdParamsSchema>;

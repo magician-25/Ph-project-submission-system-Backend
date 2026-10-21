@@ -11,7 +11,13 @@ const createBatch = async (input: CreateBatchPayload) => {
 		throw new AppError(409, "A batch with this code already exists");
 	}
 
-	return prisma.batch.create({ data: input });
+	return prisma.batch.create({
+		data: input,
+		omit: {
+			created_at: true,
+			updated_at: true
+		}
+	});
 };
 
 const getAllBatches = () =>

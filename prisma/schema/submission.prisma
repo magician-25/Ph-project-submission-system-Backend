@@ -1,11 +1,13 @@
 model Submission {
-  id          String           @id @default(uuid())
-  user_input  String           @db.Text
-  status      SubmissionStatus @default(PENDING)
+  id         String           @id @default(uuid())
+  user_input String           @db.Text
+  status     SubmissionStatus @default(PENDING)
+  mark       Int?
+
   review_note String?
   reviewed_at DateTime?
-  created_at  DateTime         @default(now())
-  updated_at  DateTime         @updatedAt
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
 
   assignment_id String
   assignment    Assignment @relation(fields: [assignment_id], references: [id], onDelete: Cascade)

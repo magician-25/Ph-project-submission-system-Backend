@@ -58,15 +58,41 @@ const updateAssignmentStatus = async (
 	});
 };
 
-const getReleasedAssignments = (batchId: string | null) => {
+const getStudentAssignments = async (
+	batchId: string | null,
+	studentId: string,
+) => {
 	if (!batchId) {
 		throw new AppError(400, "Your account is not assigned to a batch");
 	}
 
-	return prisma.assignment.findMany({
-		where: { batch_id: batchId, status: "RELEASED" },
+	const assignments = await prisma.assignment.findMany({
+		where: {
+			batch_id: batchId,
+			status: { in: ["RELEASED", "ENDED"] },
+		},
+		include: {
+			submissions: {
+				where: { student_id: studentId },
+				select: {
+					id: true,
+					user_input: true,
+					status: true,
+					mark: true,
+					review_note: true,
+					reviewed_at: true,
+					created_at: true,
+				},
+			},
+		},
 		orderBy: { assignment_number: "asc" },
 	});
+
+	const result = assignments.map(({ submissions, ...assignment }) => ({
+		...assignment,
+		mySubmission: submissions[0] ?? null,
+	}));
+	return result;
 };
 
 const getAssignmentsForBatch = async (batchId: string, query: IQuery) => {
@@ -93,7 +119,7 @@ const getAssignmentsForBatch = async (batchId: string, query: IQuery) => {
 		"ENDED",
 	];
 	const requestedStatus =
-		typeof query.status === "string" ? query.status.toUpperCase() : undefined;
+		typeof query.status === "string" ? query.status.toUpperCase() : "";
 	const assignmentStatus = assignmentStatuses.find(
 		(value) => value === requestedStatus,
 	);
@@ -124,7 +150,7 @@ const getAssignmentsForBatch = async (batchId: string, query: IQuery) => {
 };
 
 export const AssignmentService = {
-	getReleasedAssignments,
+	getStudentAssignments,
 	updateAssignmentStatus,
 	createAssignment,
 	getAssignmentsForBatch,

@@ -9,16 +9,30 @@ export const createSubmissionSchema = z.object({
 		.max(10000, "Submission input cannot exceed 10,000 characters"),
 });
 
-export const reviewSubmissionSchema = z.object({
-	status: z.enum(["APPROVED", "REJECTED"], {
-		error: "Review status must be APPROVED or REJECTED",
-	}),
-	reviewNote: z
-		.string({ error: "Review note must be text" })
-		.trim()
-		.max(2000, "Review note cannot exceed 2,000 characters")
-		.optional(),
-});
+export const reviewSubmissionSchema = z
+	.object({
+		status: z.enum(["APPROVED", "REJECTED"], {
+			error: "Review status must be APPROVED or REJECTED",
+		}),
+		mark: z
+			.number({ error: "Mark must be a number" })
+			.int("Mark must be a whole number")
+			.min(0, "Mark cannot be less than 0")
+			.max(60, "Mark cannot exceed 60")
+			.optional(),
+		reviewNote: z
+			.string({ error: "Review note must be text" })
+			.trim()
+			.max(2000, "Review note cannot exceed 2,000 characters")
+			.optional(),
+	})
+	.refine(
+		(review) => review.status !== "APPROVED" || review.mark !== undefined,
+		{
+			message: "A mark is required when approving a submission",
+			path: ["mark"],
+		},
+	);
 
 export const submissionIdParamsSchema = z.object({
 	id: z.uuid("Submission ID must be a valid UUID"),
